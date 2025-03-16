@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { Shield, Check, Loader2 } from "lucide-react";
 
 const MintButton = () => {
   const [isMinting, setIsMinting] = useState(false);
@@ -18,13 +19,13 @@ const MintButton = () => {
       // Mock successful mint
       setIsMinted(true);
       toast({
-        title: "NFT Minted Successfully",
-        description: "Your exclusive NFT has been minted and will appear in your wallet soon.",
+        title: "Certificate Successfully Verified",
+        description: "Your legal education certificate has been minted and will appear in your wallet soon.",
       });
     } catch (error) {
       toast({
-        title: "Minting Failed",
-        description: "There was an error minting your NFT. Please try again.",
+        title: "Verification Failed",
+        description: "There was an error minting your certificate. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -33,68 +34,47 @@ const MintButton = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="flex flex-col items-center space-y-4">
       <Button
         onClick={handleMint}
         disabled={isMinting || isMinted}
-        className={`text-lg px-12 py-8 rounded-2xl transition-all duration-500 min-w-72
+        className={`w-full text-lg px-8 py-6 rounded-xl transition-all duration-500
           ${isMinted 
-            ? "bg-green-500 hover:bg-green-600" 
-            : "bg-mint hover:bg-mint-light shadow-md hover:shadow-xl"
+            ? "bg-green-600 hover:bg-green-700" 
+            : "education-accent"
           } 
-          animate-scale-in`}
+          relative certificate-glow`}
       >
         <span className="flex items-center">
           {isMinted ? (
             <>
-              <svg 
-                className="w-6 h-6 mr-2" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24" 
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M5 13l4 4L19 7" 
-                />
-              </svg>
-              Minted
+              <Check className="w-5 h-5 mr-2" />
+              Certificate Verified
             </>
           ) : isMinting ? (
             <>
-              <svg 
-                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" 
-                xmlns="http://www.w3.org/2000/svg" 
-                fill="none" 
-                viewBox="0 0 24 24"
-              >
-                <circle 
-                  className="opacity-25" 
-                  cx="12" 
-                  cy="12" 
-                  r="10" 
-                  stroke="currentColor" 
-                  strokeWidth="4"
-                ></circle>
-                <path 
-                  className="opacity-75" 
-                  fill="currentColor" 
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Minting...
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Verifying on Blockchain...
             </>
           ) : (
-            "Mint NFT"
+            <>
+              <Shield className="w-5 h-5 mr-2" />
+              Verify Certificate Now
+            </>
           )}
         </span>
       </Button>
       
+      {isMinted && (
+        <div className="text-sm text-center text-emerald-700 bg-emerald-50 px-4 py-2 rounded-lg">
+          Your certificate is now permanently verified on the blockchain
+        </div>
+      )}
+      
       {!isMinted && !isMinting && (
-        <div className="absolute -inset-px bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-30 -z-10 group-hover:opacity-40 transition-all duration-1000"></div>
+        <p className="text-sm text-center text-muted-foreground">
+          Blockchain verification creates a permanent record of your legal education
+        </p>
       )}
     </div>
   );
