@@ -1,45 +1,40 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import ConnectWallet from "@/components/ConnectWallet";
 import MintButton from "@/components/MintButton";
 import { BookOpen, Award, Shield, ChevronRight } from "lucide-react";
-
 const Mint = () => {
-  const { user, isLoggedIn, loading } = useAuth();
+  const {
+    user,
+    isLoggedIn,
+    loading
+  } = useAuth();
   const navigate = useNavigate();
-
   useEffect(() => {
     // Redirect to login if not logged in
     if (!loading && !isLoggedIn) {
       navigate("/");
     }
   }, [isLoggedIn, loading, navigate]);
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
+    return <div className="min-h-screen flex justify-center items-center">
         <div className="animate-pulse flex flex-col items-center">
           <div className="h-12 w-12 rounded-full bg-primary/20 mb-4"></div>
           <div className="h-4 w-32 bg-primary/20 rounded"></div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!isLoggedIn) {
     return null; // Will redirect via useEffect
   }
-
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="w-full py-4 px-6 backdrop-blur-sm bg-white/30 border-b border-white/30 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <BookOpen className="w-6 h-6 text-primary" />
-            <span className="text-xl font-semibold tracking-tight text-primary">LegalEdu Verify</span>
+            <span className="text-xl tracking-tight text-primary font-medium">Smart Contract Tester</span>
           </div>
           
           <div className="flex items-center space-x-4">
@@ -152,12 +147,7 @@ const Mint = () => {
             
             <div className="glass p-6 rounded-xl">
               <div className="bg-primary/10 p-2 w-10 h-10 flex items-center justify-center rounded-full mb-4">
-                <svg 
-                  className="w-5 h-5 text-primary"
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
+                <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 8V12L14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   <path d="M3.05078 11C3.27368 7.94288 4.94522 5.29431 7.34731 3.90777C9.74939 2.52123 12.6386 2.46609 15.0884 3.75721C17.5382 5.04832 19.2896 7.62275 19.6039 10.5606C19.9183 13.4985 18.755 16.3918 16.4982 18.2792C14.2415 20.1666 11.2047 20.7803 8.31063 19.9307C5.41659 19.081 3.10916 16.8556 2.05078 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
@@ -188,8 +178,6 @@ const Mint = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Mint;
