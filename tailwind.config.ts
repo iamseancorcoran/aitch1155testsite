@@ -64,9 +64,19 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				mint: {
-					DEFAULT: '#0070f3',
-					light: '#3291ff',
-					dark: '#0054b3'
+					DEFAULT: '#F97316', // Warm orange
+					light: '#FDBA74', // Light orange
+					dark: '#C2410C' // Dark orange
+				},
+				peach: {
+					DEFAULT: '#FEC6A1',
+					light: '#FDE1D3',
+					dark: '#E4815E'
+				},
+				amber: {
+					DEFAULT: '#F59E0B',
+					light: '#FCD34D',
+					dark: '#B45309'
 				}
 			},
 			borderRadius: {
