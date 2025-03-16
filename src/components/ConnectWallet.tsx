@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Wallet, External, CheckCircle, XCircle } from "lucide-react";
+import { Wallet, ExternalLink, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const ConnectWallet = () => {
@@ -122,7 +122,7 @@ const ConnectWallet = () => {
                 rel="noopener noreferrer"
                 className="text-primary flex items-center mt-1 hover:underline"
               >
-                <External className="h-3 w-3 mr-1" />
+                <ExternalLink className="h-3 w-3 mr-1" />
                 Install MetaMask
               </a>
             </div>
