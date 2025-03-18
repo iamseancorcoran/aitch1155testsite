@@ -27,13 +27,38 @@ export default defineConfig(({ mode }) => ({
         'events', 
         'http', 
         'https', 
-        'crypto'
-      ]
+        'crypto',
+        'path',
+        'os',
+        'assert',
+        'fs',
+        'url'
+      ],
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true
+      }
     }),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+    sourcemap: true,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: false,
+      },
     },
   },
 }));
