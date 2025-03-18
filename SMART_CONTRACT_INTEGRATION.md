@@ -1,0 +1,316 @@
+# Smart Contract Integration Documentation
+
+## Overview
+
+This document provides detailed information about the integration of the `SoulboundCertificateV2` smart contract with the Certificate Minting Web Application. It outlines the implementation process, code changes, and key functionality to serve as reference documentation for future developers.
+
+## Contract Information
+
+- **Contract Name:** SoulboundCertificateV2
+- **Contract Address:** `0x69DEA575c1A3F649C056af1aa66D22a18C3683e4`
+- **Network:** Sepolia Testnet
+- **Contract Type:** ERC-1155 with Soulbound functionality
+
+## Architecture Overview
+
+The web application follows a clean architecture pattern where:
+
+1. **Contract Layer** (`src/lib/blockchain/contract.ts`): Contains all direct interactions with the smart contract
+2. **Wallet Layer** (`src/lib/blockchain/wallet.ts` and `WalletProvider.tsx`): Manages wallet connectivity and network state
+3. **UI Layer** (`src/components/*`): Components that display information and handle user interaction
+4. **Integration Layer** (Primarily `MintButton.tsx`): Connects the UI to the blockchain functionality
+
+## Contract Implementation Details
+
+### 1. Contract Configuration (`contract.ts`)
+
+The contract address and ABI are defined in `contract.ts`:
+
+```typescript
+// Contract address on Sepolia testnet
+export const CONTRACT_ADDRESS = '0x69DEA575c1A3F649C056af1aa66D22a18C3683e4';
+
+// Complete contract ABI
+export const CONTRACT_ABI = [
+  // Read Functions
+  "function balanceOf(address account, uint256 id) view returns (uint256)",
+  "function contractURI() view returns (string)",
+  "function exists(uint256 tokenId) view returns (bool)",
+  "function isTransferable(uint256 tokenId) view returns (bool)",
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+  "function tokenName(uint256 tokenId) view returns (string)",
+  "function totalSupply(uint256 tokenId) view returns (uint256)",
+  "function uri(uint256 tokenId) view returns (string)",
+  
+  // Write Functions
+  "function mintCertificate(address to, uint256 amount, string tokenName_, bytes data) nonpayable returns (uint256)",
+  "function toggleTransferability(uint256 tokenId, bool transferable) nonpayable"
+];
+```
+
+### 2. Contract Interaction Functions
+
+The application interacts with the contract using these key functions:
+
+#### Minting Certificate
+
+```typescript
+// Mint a token to a user
+export const mintToken = async (
+  provider: ethers.providers.Web3Provider,
+  tokenId: number,
+  address: string,
+  amount: number = 1
+): Promise<ethers.ContractTransaction> => {
+  try {
+    const contract = getContract(provider);
+    const certificateName = `Certificate #${tokenId}`;
+    const data = "0x"; // Empty data
+    
+    // Mint the token using mintCertificate
+    return await contract.mintCertificate(
+      address,
+      amount,
+      certificateName,
+      data
+    );
+  } catch (error) {
+    console.error('Error minting token:', error);
+    throw error;
+  }
+};
+```
+
+#### Checking Token Existence
+
+```typescript
+// Check if a token exists
+export const isTokenMintable = async (
+  provider: ethers.providers.Web3Provider,
+  tokenId: number
+): Promise<boolean> => {
+  try {
+    const contract = getContract(provider);
+    return await contract.exists(tokenId);
+  } catch (error) {
+    console.error('Error checking if token exists:', error);
+    return false;
+  }
+};
+```
+
+#### Checking Token Transferability
+
+```typescript
+// Check if token is transferable
+export const isTransferable = async (
+  provider: ethers.providers.Web3Provider,
+  tokenId: number
+): Promise<boolean> => {
+  try {
+    const contract = getContract(provider);
+    return await contract.isTransferable(tokenId);
+  } catch (error) {
+    console.error('Error checking transferability:', error);
+    return false;
+  }
+};
+```
+
+### 3. Event Handling
+
+The application handles contract events to extract token IDs after minting:
+
+```typescript
+// In MintButton.tsx
+try {
+  // Find the CertificateMinted event to get the token ID
+  const contract = getContract(provider!);
+  const eventSignature = "CertificateMinted(address,uint256,string)";
+  const eventId = ethers.utils.id(eventSignature);
+  
+  const event = receipt.logs.find(
+    log => log.topics[0] === eventId
+  );
+  
+  if (event) {
+    const iface = new ethers.utils.Interface([`event ${eventSignature}`]);
+    const decodedLog = iface.parseLog(event);
+    newTokenId = decodedLog.args[1].toNumber();
+    console.log("Minted token ID:", newTokenId);
+  }
+} catch (error) {
+  console.error("Error decoding event:", error);
+}
+```
+
+## Key Differences from Previous Contract
+
+The SoulboundCertificateV2 contract differs from the previous contract in several key ways:
+
+1. **Token Minting**: Uses `mintCertificate` function instead of `publicMint`
+   - Accepts a token name parameter
+   - Returns the created token ID (auto-generated by the contract)
+
+2. **Token Existence**: Uses `exists(tokenId)` instead of `publiclyMintableTokens(tokenId)`
+
+3. **Transferability**: Token transferability is controlled per token with `isTransferable(tokenId)` and `toggleTransferability(tokenId, bool)`
+
+4. **Removed Features**: 
+   - No more pausing mechanism 
+   - No blacklist functionality
+   - No batch minting
+
+## UI Integration
+
+The primary integration with the UI happens in the `MintButton.tsx` component:
+
+```typescript
+// MintButton.tsx excerpt (with key integration points)
+const handleMint = async () => {
+  if (!isWalletConnected) {
+    toast({
+      title: "Wallet Not Connected",
+      description: "Please connect your wallet before minting.",
+      variant: "destructive",
+    });
+    return;
+  }
+  
+  // ...other checks...
+  
+  try {
+    // Mint the token using our contract service
+    const tx = await mintToken(provider!, tokenId, address);
+    
+    // Wait for transaction to be mined
+    toast({
+      title: "Transaction Submitted",
+      description: `Your transaction has been submitted with hash: ${tx.hash.substring(0, 6)}...${tx.hash.substring(tx.hash.length - 4)}`,
+    });
+    
+    const receipt = await tx.wait();
+    
+    // Try to extract the token ID from the event
+    // ... (event handling code shown above) ...
+    
+    // Update state
+    setIsMinted(true);
+    setShowMetadata(true);
+    
+    toast({
+      title: "Certificate Successfully Minted",
+      description: `Transaction confirmed in block #${receipt.blockNumber}. Your legal education certificate has been minted.`,
+    });
+  } catch (error: any) {
+    // Error handling...
+  }
+};
+```
+
+## Local Development Configuration
+
+For local development, the base path in `vite.config.ts` is set conditionally:
+
+```typescript
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/minting-magic-gateway/' : '/',
+  // ...other configuration...
+}));
+```
+
+This ensures the site works correctly in both development and production environments.
+
+## Wallet Configuration
+
+The application uses Web3Modal with WalletConnect for wallet connectivity. The Sepolia testnet is configured in `WalletProvider.tsx`:
+
+```typescript
+// Sepolia chain ID
+const SEPOLIA_CHAIN_ID = 11155111;
+
+// Configure web3modal
+const providerOptions = {
+  walletconnect: {
+    package: WalletConnectProvider,
+    options: {
+      // Use Infura as a fallback RPC provider
+      infuraId: 'your-infura-id', // Replace with your Infura ID if needed
+      rpc: {
+        [SEPOLIA_CHAIN_ID]: 'https://eth-sepolia.g.alchemy.com/v2/vTDFF7It0sBWpkFeRtC9wruuHH7E0Mc-'
+      }
+    }
+  }
+};
+```
+
+## Metadata Handling
+
+The application handles token metadata fetching and display:
+
+```typescript
+// Fetch token metadata from URI
+export const fetchTokenMetadata = async (
+  provider: ethers.providers.Web3Provider,
+  tokenId: number
+): Promise<any> => {
+  try {
+    // Get the token URI
+    const uri = await getTokenURI(provider, tokenId);
+    
+    // Replace any {id} placeholder with the tokenId in hex format
+    const formattedUri = uri.replace(
+      '{id}',
+      ethers.utils.hexZeroPad(ethers.utils.hexlify(tokenId), 32).slice(2)
+    );
+    
+    // Fetch the metadata
+    const response = await fetch(formattedUri);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch metadata: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching token metadata:', error);
+    return {
+      name: `Token #${tokenId}`,
+      description: 'Metadata could not be loaded',
+      image: ''
+    };
+  }
+};
+```
+
+## Integration Process Summary
+
+The integration of the SoulboundCertificateV2 contract involved the following steps:
+
+1. **Contract Analysis**: Understanding the new contract's functions and event structure
+2. **ABI Update**: Updating the ABI definition to match the new contract
+3. **Function Adaptation**: Modifying interaction functions to use new contract methods
+4. **Event Handling**: Adding code to extract token IDs from events
+5. **Error Handling**: Updating error handling to match new contract error scenarios
+6. **UI Integration**: Ensuring the UI components work with the new contract functionality
+7. **Testing**: Manual testing to verify correct functionality
+
+## Future Enhancements
+
+Potential future enhancements for the contract integration:
+
+1. **Certificate Name Customization**: Allow users to input custom certificate names
+2. **Transferability Controls**: Add UI for toggling certificate transferability (for contract owners)
+3. **Batch View**: Add functionality to view all certificates owned by the user
+4. **Certificate Verification**: Add a dedicated verification page for certificates
+
+## Conclusion
+
+The SoulboundCertificateV2 contract has been successfully integrated with the web application. The integration provides all the necessary functionality for minting, viewing, and verifying certificates on the Sepolia testnet.
+
+For any questions or issues, please contact the development team.
+
+---
+
+*Documentation created: March 18, 2025*

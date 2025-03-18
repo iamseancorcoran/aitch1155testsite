@@ -197,3 +197,21 @@
   background: linear-gradient(135deg, #F97316 0%, #FDBA74 100%);
   @apply text-white shadow-md hover:shadow-lg transition-shadow;
 }
+
+/* Fix for wallet popup z-index issues */
+.wallet-connecting .premium-glass,
+.wallet-connecting .glass,
+.wallet-connecting .certificate-border,
+.wallet-connecting .legal-paper,
+.wallet-connecting .certificate-glow,
+.wallet-connecting [class*="z-"] {
+  z-index: 1 !important;
+}
+
+.wallet-connecting main > div {
+  z-index: 1 !important;
+}
+
+.wallet-connecting header {
+  z-index: 1 !important;
+}

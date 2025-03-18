@@ -1,108 +1,112 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Wallet, ExternalLink, CheckCircle, XCircle } from "lucide-react";
+import { Wallet, ExternalLink, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useWallet } from "@/lib/blockchain/wallet";
 
 const ConnectWallet = () => {
-  const [connected, setConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [connectionError, setConnectionError] = useState("");
+  const [networkError, setNetworkError] = useState("");
   const { toast } = useToast();
-
-  // Check if the browser has Ethereum provider (MetaMask)
-  const checkIfWalletIsConnected = async () => {
-    const { ethereum } = window as any;
+  
+  const {
+    address,
+    isConnecting,
+    isCorrectNetwork,
+    error: connectionError,
+    connect,
+    disconnect,
+    switchToSepolia
+  } = useWallet();
+  
+  // Check if wallet is connected
+  const connected = !!address;
+  
+  // Handle wallet connection
+  const handleConnect = async () => {
+    // Add wallet-connecting class to body to fix z-index issues with MetaMask popup
+    document.body.classList.add('wallet-connecting');
     
-    if (!ethereum) {
-      console.log("Make sure you have MetaMask installed!");
-      return false;
-    }
+    const success = await connect();
     
-    console.log("We have the ethereum object", ethereum);
-    return true;
-  };
-
-  const connectWallet = async () => {
-    setIsConnecting(true);
-    setConnectionError("");
+    // Remove the class after connection attempt is complete
+    setTimeout(() => {
+      document.body.classList.remove('wallet-connecting');
+    }, 500);
     
-    try {
-      const hasWallet = await checkIfWalletIsConnected();
-      
-      if (!hasWallet) {
-        toast({
-          title: "Wallet Not Found",
-          description: "Please install MetaMask to connect your wallet",
-          variant: "destructive",
-        });
-        setConnectionError("No wallet detected");
-        setIsConnecting(false);
-        return;
-      }
-      
-      const { ethereum } = window as any;
-      
-      // Request account access
-      const accounts = await ethereum.request({ 
-        method: "eth_requestAccounts" 
+    if (success) {
+      toast({
+        title: "Wallet Connected",
+        description: `Connected to ${address.substring(0, 6)}...${address.substring(address.length - 4)}`,
       });
-      
-      if (accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-        setConnected(true);
-        
-        toast({
-          title: "Wallet Connected",
-          description: `Connected to ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`,
-        });
-        
-        // Listen for account changes
-        ethereum.on("accountsChanged", (newAccounts: string[]) => {
-          if (newAccounts.length === 0) {
-            disconnectWallet();
-          } else {
-            setWalletAddress(newAccounts[0]);
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
-      setConnectionError("Failed to connect wallet");
-      
+    } else {
       toast({
         title: "Connection Failed",
         description: "Could not connect to wallet. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsConnecting(false);
     }
   };
   
-  const disconnectWallet = () => {
-    setConnected(false);
-    setWalletAddress("");
-    
-    // Remove event listeners
-    const { ethereum } = window as any;
-    if (ethereum) {
-      ethereum.removeAllListeners("accountsChanged");
-    }
+  // Handle wallet disconnection
+  const handleDisconnect = () => {
+    disconnect();
     
     toast({
       title: "Wallet Disconnected",
       description: "Your wallet has been disconnected",
     });
   };
+  
+  // Handle network switching
+  const handleSwitchNetwork = async () => {
+    setNetworkError("");
+    
+    // Add wallet-connecting class to body to fix z-index issues with MetaMask popup
+    document.body.classList.add('wallet-connecting');
+    
+    const success = await switchToSepolia();
+    
+    // Remove the class after network switch attempt is complete
+    setTimeout(() => {
+      document.body.classList.remove('wallet-connecting');
+    }, 500);
+    
+    if (success) {
+      toast({
+        title: "Network Switched",
+        description: "Successfully connected to Sepolia testnet",
+      });
+    } else {
+      setNetworkError("Wrong network");
+      toast({
+        title: "Network Switch Failed",
+        description: "Please manually switch to Sepolia testnet in your wallet",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Check network on connection
+  useEffect(() => {
+    if (connected && !isCorrectNetwork) {
+      setNetworkError("Wrong network");
+      toast({
+        title: "Wrong Network",
+        description: "Please switch to Sepolia testnet",
+        variant: "destructive",
+      });
+    } else {
+      setNetworkError("");
+    }
+  }, [connected, isCorrectNetwork, toast]);
 
   return (
     <div className="relative animate-fade-in">
       {!connected ? (
         <div>
           <Button 
-            onClick={connectWallet}
+            onClick={handleConnect}
             className="bg-primary/90 hover:bg-primary transition-all duration-300 rounded-full px-6"
             disabled={isConnecting}
           >
@@ -129,14 +133,36 @@ const ConnectWallet = () => {
           )}
         </div>
       ) : (
-        <Button 
-          onClick={disconnectWallet}
-          variant="outline"
-          className="bg-white/10 backdrop-blur-sm border border-primary/20 hover:bg-white/20 transition-all duration-300 rounded-full px-6"
-        >
-          <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-          {`${walletAddress.substring(0, 6)}...${walletAddress.substring(38)}`}
-        </Button>
+        <div className="flex flex-col items-end">
+          <Button 
+            onClick={handleDisconnect}
+            variant="outline"
+            className="bg-white/10 backdrop-blur-sm border border-primary/20 hover:bg-white/20 transition-all duration-300 rounded-full px-6"
+          >
+            {networkError ? (
+              <AlertTriangle className="mr-2 h-4 w-4 text-amber-500" />
+            ) : (
+              <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+            )}
+            {`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}
+          </Button>
+          
+          {networkError && (
+            <div className="mt-2 bg-amber-50 text-amber-700 px-3 py-2 rounded-md text-xs font-medium">
+              <div className="flex items-center">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {networkError}
+              </div>
+              <Button 
+                variant="link" 
+                className="text-primary p-0 h-auto text-xs font-medium flex items-center mt-1 hover:underline"
+                onClick={handleSwitchNetwork}
+              >
+                Switch to Sepolia
+              </Button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
