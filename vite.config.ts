@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
         'os',
         'assert',
         'fs',
-        'url'
+        'url',
       ],
       globals: {
         Buffer: true,
@@ -40,6 +40,32 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Manually handle CommonJS modules that cause issues
+      "web3-provider-engine": path.resolve(__dirname, "./src/polyfills/web3-provider-engine"),
+      "web3-provider-engine/subproviders/cache": path.resolve(__dirname, "./src/polyfills/web3-provider-engine/subproviders/cache.js"),
+      "web3-provider-engine/subproviders/fixture": path.resolve(__dirname, "./src/polyfills/web3-provider-engine/subproviders/fixture.js"),
+      "web3-provider-engine/subproviders/nonce-tracker": path.resolve(__dirname, "./src/polyfills/web3-provider-engine/subproviders/nonce-tracker.js"),
+      "web3-provider-engine/subproviders/filters": path.resolve(__dirname, "./src/polyfills/web3-provider-engine/subproviders/filters.js"),
+      "web3-provider-engine/subproviders/hooked-wallet": path.resolve(__dirname, "./src/polyfills/web3-provider-engine/subproviders/hooked-wallet.js"),
+      "web3-provider-engine/subproviders/subscriptions": path.resolve(__dirname, "./src/polyfills/web3-provider-engine/subproviders/subscriptions.js")
+    },
+    // Ensure we prefer browser versions of packages
+    mainFields: ['browser', 'module', 'main']
+  },
+  optimizeDeps: {
+    include: [
+      'stream-browserify',
+      'stream-http',
+      'https-browserify',
+      'os-browserify/browser',
+      'crypto-browserify',
+      'assert'
+    ],
+    esbuildOptions: {
+      // Needed to prevent require() errors
+      define: {
+        global: 'globalThis',
+      },
     },
   },
   build: {
@@ -56,5 +82,11 @@ export default defineConfig(({ mode }) => ({
     },
     sourcemap: true,
     minify: 'esbuild',
+    commonjsOptions: {
+      // This helps with CommonJS modules
+      transformMixedEsModules: true,
+      // Add include to prevent warnings
+      include: [/node_modules/]
+    }
   },
 }));
