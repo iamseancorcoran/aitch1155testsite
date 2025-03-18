@@ -6,7 +6,7 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: mode === 'production' ? '/aitch1155testsite/' : '/',
+  base: '/',
   server: {
     host: "::",
     port: 3000,

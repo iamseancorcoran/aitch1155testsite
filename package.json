@@ -11,7 +11,12 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "start": "node server.js",
+    "heroku-postbuild": "npm run build"
+  },
+  "engines": {
+    "node": "18.x"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -50,6 +55,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
     "ethers": "^5.7.2",
+    "express": "^4.21.2",
     "framer-motion": "^12.5.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
