@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
+// Remove lovable-tagger dependency
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 // https://vitejs.dev/config/
@@ -13,8 +13,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    // Remove lovable-tagger plugin
     nodePolyfills({
       // Whether to polyfill `node:` protocol imports.
       protocolImports: true,
@@ -53,12 +52,7 @@ export default defineConfig(({ mode }) => ({
       },
     },
     sourcemap: true,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: false,
-        drop_debugger: false,
-      },
-    },
+    // Use esbuild minifier instead of terser
+    minify: 'esbuild',
   },
 }));
